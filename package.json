@@ -1,0 +1,22 @@
+{
+  "name": "queenbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "queen.js",
+  "scripts": {
+    "test": "node queen.js"
+  },
+  "author": "ardittristan",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "github:discordjs/discord.js",
+    "emoji-exists": "^1.0.1",
+    "gifsicle": "^5.0.0",
+    "images-downloader": "^1.0.3",
+    "request": "^2.88.2",
+    "sharp": "^0.25.2",
+    "sqlite3": "^4.1.1",
+    "svg2img": "^0.6.1",
+    "twemoji-parser": "^12.1.3"
+  }
+}
