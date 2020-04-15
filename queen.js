@@ -1,6 +1,7 @@
 //! Imports
 const { Database, OPEN_READWRITE, OPEN_CREATE } = require("sqlite3");
 const Discord = require("discord.js");
+const GetNextDate = require("get-next-date");
 const { existsSync, mkdirSync, unlinkSync } = require("fs");
 const { execSync } = require('child_process');
 const imageDownload = require('images-downloader').images;
@@ -12,6 +13,8 @@ const svg2img = require('svg2img');
 const { createRichEmbed } = require("./libs/draglib");
 const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'], disabledEvents: ['TYPING_START'] });
 const config = require("./config.json");
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+const doc = new GoogleSpreadsheet(config.spreadsheetid);
 
 
 
@@ -31,6 +34,8 @@ var activeTime = 3600000;
 var starActive = false;
 //* pixel size of jumbo emotes
 var jumboSize = 128;
+var bdaySheet;
+var daysSince1970Sheet;
 
 
 
@@ -324,6 +329,45 @@ async function activeUserCheck() {
         guild.channels.resolve(config.starboard).edit({ topic: `${Math.ceil(activeUsers * starDevider) + 1} hearts needed for heartboard` });
         guild.channels.resolve(config.logchannel).edit({ topic: `There are ${activeUsers} users active!` });
     });
+}
+
+//* init birthday sheet
+async function sheetSetup() {
+    doc.useApiKey(config.spreadsheetapikey)
+        .then(async function () {
+            doc.loadInfo()
+                .then(async function () {
+                    bdaySheet = doc.sheetsByIndex[0];
+                    daysSince1970Sheet = doc.sheetsByIndex[1];
+                    var timeout = GetNextDate(new Date(Date.now())).getTime() - Date.now() + 7200000;
+                    setTimeout(function () {
+                        checkBirthday();
+                        setInterval(checkBirthday, 86400000);
+                    }, timeout);
+                });
+        });
+}
+
+//* check for birthdays
+async function checkBirthday() {
+    var rows = await bdaySheet.getRows();
+    var birthdayTimestamp = await daysSince1970Sheet.getRows();
+    var curTime = new Date(Date.now());
+    var curDay = curTime.getDate();
+    var curMonth = curTime.getMonth();
+    var birthdays = [];
+    rows.forEach(function (row, id) {
+        var day = birthdayTimestamp[id].day;
+        var month = birthdayTimestamp[id].month;
+        if (month == curMonth + 1 && day == curDay) {
+            birthdays.push({ name: row.name, age: row.age });
+        }
+    });
+    if (birthdays != []) {
+        birthdays.forEach(data => {
+            guild.channels.resolve(config.announcements).send(`It is ${data.name}'s birthay today! Happy ${data.age} years!`);
+        });
+    }
 }
 //? End of functions
 
