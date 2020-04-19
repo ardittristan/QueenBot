@@ -1,7 +1,6 @@
 //! Imports
 const { Database, OPEN_READWRITE, OPEN_CREATE } = require("sqlite3");
 const Discord = require("discord.js");
-const GetNextDate = require("get-next-date");
 const { existsSync, mkdirSync, unlinkSync } = require("fs");
 const { execSync } = require('child_process');
 const imageDownload = require('images-downloader').images;
@@ -341,7 +340,10 @@ async function sheetSetup() {
                 .then(async function () {
                     bdaySheet = doc.sheetsByIndex[0];
                     daysSince1970Sheet = doc.sheetsByIndex[1];
-                    var timeout = GetNextDate(new Date(Date.now())).getTime() - Date.now() + 7200000;
+                    var timeout = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 2, 0, 0, 0) - now;
+                    if (timeout < 0) {
+                        timeout += 86400000;
+                    }
                     setTimeout(function () {
                         checkBirthday();
                         setInterval(checkBirthday, 86400000);

@@ -11,7 +11,6 @@
   "dependencies": {
     "discord.js": "github:discordjs/discord.js",
     "emoji-exists": "^1.0.1",
-    "get-next-date": "^1.0.0",
     "gifsicle": "^5.0.0",
     "google-spreadsheet": "^3.0.11",
     "images-downloader": "^1.0.3",
