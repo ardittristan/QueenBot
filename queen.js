@@ -24,6 +24,8 @@ const doc = new GoogleSpreadsheet(config.spreadsheetid);
 //! Globar vars
 /** @type {number} */
 const pLength = config.prefix.length;
+/** @type {Discord.TextChannel} */
+var logChannel;
 /** @type {Discord.Guild} */
 var guild;
 var activeUsers = 1;
