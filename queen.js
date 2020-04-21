@@ -80,6 +80,7 @@ client.login(config.token);
 client.on("ready", () => {
 
     guild = client.guilds.resolve(config.guildid);
+    logChannel = guild.channels.resolve(config.logchannel);
 
     activeUserCheck();
     console.log("Booted");
