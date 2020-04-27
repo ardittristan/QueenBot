@@ -108,6 +108,8 @@ client.on("message", async (message) => {
                 ".rename <name>\n -if put in general chat it renames the channel name\n\n" +
                 ".rename <name>\n -if put in vc talk it renames the voice channel you're currently in\n\n" +
                 ".jumbo <emoji>\n -makes emoji big" +
+                ".toggleregion\n -toggles the voice region between europe and russia\n\n" +
+                ".disconnect\n -disconnects you from your current vc channel\n\n" +
                 "```"
             ).then(message =>
                 message.delete({ timeout: 30000 })
@@ -190,6 +192,28 @@ client.on("message", async (message) => {
             break;
         //#endregion
 
+        case "toggleregion":
+            //* toggles region between russia and europe
+            //#region
+            if (guild.region === "europe") {
+                guild.setRegion("russia");
+            } else {
+                guild.setRegion("europe");
+            }
+            logChannel.send(`${authr}` + " toggled the server region");
+            message.delete({ timeout: 1000 });
+            break;
+        //#endregion
+
+        case "disconnect":
+            //* disconnects user from current connected voice channel
+            //#region
+            if (message.member.voice.channel != undefined) {
+                guild.members.resolve(authr.id).voice.setChannel(null);
+            }
+            message.delete({ timeout: 1000 });
+            break;
+        //#endregion
     }
 });
 
