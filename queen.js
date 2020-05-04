@@ -109,6 +109,7 @@ client.on("message", async (message) => {
                 ".rename <name>\n -if put in vc talk it renames the voice channel you're currently in\n\n" +
                 ".jumbo <emoji>\n -makes emoji big" +
                 ".toggleregion\n -toggles the voice region between europe and russia\n\n" +
+                ".birthday\n -posts link to birthday list\n\n" +
                 ".disconnect\n -disconnects you from your current vc channel\n\n" +
                 "```"
             ).then(message =>
@@ -211,6 +212,13 @@ client.on("message", async (message) => {
             if (message.member.voice.channel != undefined) {
                 guild.members.resolve(authr.id).voice.setChannel(null);
             }
+            message.delete({ timeout: 1000 });
+            break;
+        //#endregion
+
+        case "birthday":
+            //#region 
+            message.channel.send(new Discord.MessageEmbed().addField(String.fromCharCode(8203), `[Birthday List](${config.birthdayurl})`));
             message.delete({ timeout: 1000 });
             break;
         //#endregion
@@ -366,7 +374,7 @@ async function sheetSetup() {
                     bdaySheet = doc.sheetsByIndex[0];
                     daysSince1970Sheet = doc.sheetsByIndex[1];
                     var now = new Date();
-                    var timeout = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 2, 0, 0, 0) - now;
+                    var timeout = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 1, 0, 0, 0) - now;
                     if (timeout < 0) {
                         timeout += 86400000;
                     }
