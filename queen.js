@@ -9,7 +9,7 @@ const emojiExists = require('emoji-exists');
 const twemojiParse = require('twemoji-parser').parse;
 const getBufferFromUrl = require('request').defaults({ encoding: null }).get;
 const svg2img = require('svg2img');
-const { createRichEmbed } = require("./libs/draglib");
+const { createRichEmbed, convertDelayStringToMS } = require("./libs/draglib");
 const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'], disabledEvents: ['TYPING_START'] });
 const config = require("./config.json");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
@@ -67,6 +67,12 @@ let db = new Database("./db/database.db", OPEN_READWRITE | OPEN_CREATE, (err) =>
             console.error(err.message);
         }
     });
+    //* creates table for reminders
+    db.run(/*sql*/`CREATE TABLE IF NOT EXISTS "Reminders" ("DateTime" INTEGER NOT NULL, "UserId" TEXT NOT NULL, "Reminder" TEXT NOT NULL)`, function (err) {
+        if (err) {
+            console.error(err.message);
+        }
+    });
 });
 
 
@@ -83,6 +89,7 @@ client.on("ready", () => {
     logChannel = guild.channels.resolve(config.logchannel);
 
     activeUserCheck();
+    remindCheck();
     console.log("Booted");
 });
 
@@ -220,6 +227,24 @@ client.on("message", async (message) => {
             //#region 
             message.channel.send(new Discord.MessageEmbed().addField(String.fromCharCode(8203), `[Birthday List](${config.birthdayurl})`));
             message.delete({ timeout: 1000 });
+            break;
+        //#endregion
+
+        case "remindme":
+        case "reminder":
+        case "rem":
+        case "remind":
+            //* reminder tool
+            //#region
+            var arg = message.content.slice(pLength + 6).trim();
+            var delayString = arg.substr(0, arg.indexOf(" "));
+            var delay = new Date(Date.now() + convertDelayStringToMS(delayString));
+            if (delay) {
+                var reminder = arg.substr(delayString.length).trim();
+                var author = authr.id;
+                db.run(/*sql*/`INSERT INTO Reminders VALUES (?, ?, ?)`, [delay, author, reminder]);
+                message.channel.send("You have set a reminder for: `" + delay.toISOString().replace(/T/, " ").replace(/\..+/, "`"));
+            }
             break;
         //#endregion
     }
@@ -407,6 +432,35 @@ async function checkBirthday() {
         });
     }
 }
+
+//* check if there are reminders to be send
+async function remindCheck() {
+    var currDateTime = Date.now();
+    let sql = /*sql*/ `SELECT   DateTime,
+                                UserId,
+                                Reminder,
+                                _rowid_ id
+                        FROM Reminders
+                        ORDER BY DateTime`;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            throw err;
+        } else
+            if (rows.length !== 0) {
+                rows.forEach((row) => {
+                    if (currDateTime >= row.DateTime) {
+                        guild.channels.resolve(config.defaultchannel).send("<@" + row.UserId + ">, **you asked me to remind you:** " + row.Reminder, { disableEveryone: true });
+                        db.run(/*sql*/`DELETE FROM Reminders WHERE rowid=?`, row.id, function (err) {
+                            if (err) {
+                                return console.error(err.message);
+                            }
+                        });
+                    }
+                });
+            }
+    });
+}
 //? End of functions
 
 
@@ -434,3 +488,4 @@ process.on('unhandledRejection', err => {
 //! Intervals
 setInterval(activeUserCheck, 600000);
 sheetSetup();
+setInterval(remindCheck, 60000);
