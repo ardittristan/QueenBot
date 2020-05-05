@@ -117,6 +117,7 @@ client.on("message", async (message) => {
                 ".jumbo <emoji>\n -makes emoji big" +
                 ".toggleregion\n -toggles the voice region between europe and russia\n\n" +
                 ".birthday\n -posts link to birthday list\n\n" +
+                ".remind <wdhm> <message>\n -adds reminder in set amount of time, example: .remind 4d2m <message>\n\n" +
                 ".disconnect\n -disconnects you from your current vc channel\n\n" +
                 "```"
             ).then(message =>
