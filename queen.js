@@ -237,7 +237,7 @@ client.on("message", async (message) => {
         case "remind":
             //* reminder tool
             //#region
-            var arg = message.content.slice(pLength + 6).trim();
+            var arg = message.content.substr(message.content.indexOf(' ') + 1).trim();
             var delayString = arg.substr(0, arg.indexOf(" "));
             var delay = new Date(Date.now() + convertDelayStringToMS(delayString));
             if (delay) {
