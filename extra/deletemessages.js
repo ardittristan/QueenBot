@@ -12,6 +12,22 @@ const awaitReply = (textChannel, userId) => {
     });
 };
 
+const dateInputToDate = (dateInput) => {
+    const dateMatch = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!dateMatch) {
+        return null;
+    }
+
+    let [y, m, d] = dateMatch.slice(1).map(v => parseInt(v, 10));
+
+    const date = new Date(y, m - 1, d);
+    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+        return null;
+    }
+
+    return date;
+};
+
 /**
  * @param {Client} client
  * @param {Message} message
@@ -51,33 +67,45 @@ async function deletemessages(client, message) {
         return;
     }
 
-    // Ask for the earliest date we'll look for messages to delete
-    message.channel.send("And finally, how far back should we look? Date format YYYY-MM-DD");
-    const dateAnswer = await awaitReply(message.channel, message.author.id);
+    // Ask for the most recent date we'll use for deleting messages
+    message.channel.send("How far back should we *start* looking? As in, what is the most recent date messages should be deleted on? Date format YYYY-MM-DD");
+    const fromDateAnswer = await awaitReply(message.channel, message.author.id);
 
-    if (!dateAnswer || !dateAnswer.content || dateAnswer === "cancel") {
+    if (!fromDateAnswer || !fromDateAnswer.content || fromDateAnswer === "cancel") {
         message.channel.send("Cancelled");
         return;
     }
 
-    const dateMatch = dateAnswer.content.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!dateMatch) {
+    const fromDate = dateInputToDate(fromDateAnswer.content);
+    if (!fromDate) {
         message.channel.send("No idea what that date is tbh");
         return;
     }
 
-    let [y, m, d] = dateMatch.slice(1).map(v => parseInt(v, 10));
+    fromDate.setHours(23);
+    fromDate.setMinutes(59);
+    fromDate.setSeconds(59);
 
-    const date = new Date(y, m - 1, d);
-    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+    // Ask for the most distant date we'll look for messages to delete
+    message.channel.send("And finally, how far back should we look? Date format YYYY-MM-DD");
+    const toDateAnswer = await awaitReply(message.channel, message.author.id);
+
+    if (!toDateAnswer || !toDateAnswer.content || toDateAnswer === "cancel") {
+        message.channel.send("Cancelled");
+        return;
+    }
+
+    const toDate = dateInputToDate(toDateAnswer.content);
+    if (!toDate) {
         message.channel.send("No idea what that date is tbh");
         return;
     }
 
     // Confirm
     const pad = str => ("00" + str).slice(-2);
-    const formattedDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    message.channel.send(`So, to confirm: delete messages from <@!${userId}> (\`${userId}\`) in channel <#${channel.id}> (\`${channel.id}\`), going back until ${formattedDate}? Answer OK to continue.`);
+    const formattedFromDate = `${fromDate.getFullYear()}-${pad(fromDate.getMonth() + 1)}-${pad(fromDate.getDate())}`;
+    const formattedToDate = `${toDate.getFullYear()}-${pad(toDate.getMonth() + 1)}-${pad(toDate.getDate())}`;
+    message.channel.send(`So, to confirm:\nDelete messages from <@!${userId}> (\`${userId}\`) in channel <#${channel.id}> (\`${channel.id}\`) between ${formattedFromDate} and ${formattedToDate}?\n\nAnswer OK to continue.`);
 
     const confirmAnswer = await awaitReply(message.channel, message.author.id);
     if (!confirmAnswer || !confirmAnswer.content || confirmAnswer.content !== "OK") {
@@ -99,7 +127,8 @@ async function deletemessages(client, message) {
     });
 
     const batchSize = 50;
-    const endTimestamp = +date;
+    const fromTimestamp = +fromDate;
+    const toTimestamp = +toDate;
     let deleted = 0;
     let lastMessageId = infoMessage.id;
 
@@ -115,7 +144,8 @@ async function deletemessages(client, message) {
 
             lastMessageId = messageToCheck.id;
             if (messageToCheck.author.id !== userId) continue;
-            if (messageToCheck.createdTimestamp < endTimestamp) break deleteLoop;
+            if (messageToCheck.createdTimestamp > fromTimestamp) continue; // Message is too new, keep looking
+            if (messageToCheck.createdTimestamp < toTimestamp) break deleteLoop; // Message is too old, bail
 
             console.log(`Deleting ${messageToCheck.channel.id}-${messageToCheck.id}`);
             try {
