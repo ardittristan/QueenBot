@@ -268,6 +268,10 @@ client.on("message", async (message) => {
 
             break;
 
+        case "deletemessages":
+            require('./extra/deletemessages')(client, message);
+            break;
+
     }
 });
 //? End of commands
