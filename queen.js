@@ -225,7 +225,7 @@ client.on("message", async (message) => {
         //#endregion
 
         case "birthday":
-            //#region 
+            //#region
             message.channel.send(new Discord.MessageEmbed().addField(String.fromCharCode(8203), `[Birthday List](${config.birthdayurl})`));
             message.delete({ timeout: 1000 });
             break;
@@ -323,40 +323,32 @@ client.on("messageReactionAdd", async (messageReaction) => {
         }
     }
     starActive = true;
+
     if (messageReaction.partial) {
-        try {
-            await messageReaction.fetch().then(async function () {
-                await messageReaction.message.fetch().then(async function () {
-                    if (messageReaction.emoji.name === "❤️" && guild.id === messageReaction.message.guild.id) {
-                        var exists = false;
-                        db.all(/*sql*/`SELECT MessageId FROM "Starred" WHERE MessageId = ? LIMIT 1`, [messageReaction.message.id], async function (err, rows) {
-                            if (rows.length === 1) { exists = true; }
-                            if (messageReaction.count >= Math.ceil(activeUsers * starDevider) + 1 && !exists) {
-                                guild.channels.resolve(config.starboard).send(await createRichEmbed(await messageReaction.message), { disableEveryone: true });
-                                db.run(/*sql*/`INSERT INTO Starred VALUES (?)`, [messageReaction.message.id]);
-                                starActive = false;
-                            }
-                        });
-                    }
-                });
+        await messageReaction.message.fetch();
+    }
+
+    if (messageReaction.emoji.name !== "❤️" || guild.id !== messageReaction.message.guild.id) {
+        // Wrong emoji or wrong server, bail
+        return;
+    }
+
+    db.all(/*sql*/`SELECT MessageId FROM "Starred" WHERE MessageId = ? LIMIT 1`, [messageReaction.message.id], async function (err, rows) {
+        if (rows.length === 1) {
+            // Message is already starboarded, don't starboard it again
+            return;
+        }
+
+        if (messageReaction.count >= Math.ceil(activeUsers * starDevider) + 1) {
+            guild.channels.resolve(config.starboard).send({
+                embed: await createRichEmbed(await messageReaction.message),
+                disableEveryone: true,
             });
-        } catch (error) {
-            console.log("Something went wrong when fetching the reaction: ", error);
+            db.run(/*sql*/`INSERT INTO Starred VALUES (?)`, [messageReaction.message.id]);
             starActive = false;
         }
-    } else {
-        if (messageReaction.emoji.name === "❤️" && guild.id === messageReaction.message.guild.id) {
-            var exists = false;
-            db.all(/*sql*/`SELECT MessageId FROM "Starred" WHERE MessageId = ? LIMIT 1`, [messageReaction.message.id], async function (err, rows) {
-                if (rows.length === 1) { exists = true; }
-                if (messageReaction.count >= Math.ceil(activeUsers * starDevider) + 1 && !exists) {
-                    guild.channels.resolve(config.starboard).send(await createRichEmbed(await messageReaction.message, { disableEveryone: true }));
-                    db.run(/*sql*/`INSERT INTO Starred VALUES (?)`, [messageReaction.message.id]);
-                    starActive = false;
-                }
-            });
-        }
-    }
+    });
+
     starActive = false;
     //#endregion
 });
