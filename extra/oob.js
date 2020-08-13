@@ -4,7 +4,7 @@ const { TextChannel } = require("discord.js");
  * @param {string} str Stroobng toob ooboobb
  * @returns {string} Ooboobb'd stroobng
  */
-const oob = str => str.replace(/[aeiouy]/g, "oob");
+const oob = str => str.replace(/[aeiou]/g, "oob");
 
 /**
  * @param {TextChannel} channel Choobnnoobl toob roobply oobn
