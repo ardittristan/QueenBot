@@ -93,14 +93,27 @@ client.on("ready", () => {
     console.log("Booted");
 });
 
+function getCommandParts(content) {
+    const commandPartsSource = content.slice(pLength);
+    const argsSeparatorMatch = commandPartsSource.match(/\s+/);
+    let [command, argsString] = argsSeparatorMatch
+        ? [commandPartsSource.slice(0, argsSeparatorMatch.index), commandPartsSource.slice(argsSeparatorMatch.index).trim()]
+        : [commandPartsSource, ""];
+    command = command.toLowerCase();
+    const args = argsString.split(/\s+/g);
 
+    return {
+        command,
+        argsString,
+        args,
+    };
+}
 
 //! Commands
 client.on("message", async (message) => {
     if (!message.content.startsWith(config.prefix) || message.author.bot) return;
 
-    const args = message.content.slice(pLength).trim().split(/ +/g);
-    const command = args.shift().toLocaleLowerCase();
+    const { command, argsString, args } = getCommandParts(message.content);
     const authr = message.author;
 
     switch (command) {
@@ -119,6 +132,7 @@ client.on("message", async (message) => {
                 ".birthday\n -posts link to birthday list\n\n" +
                 ".remind <wdhm> <message>\n -adds reminder in set amount of time, example: .remind 4d2m <message>\n\n" +
                 ".disconnect\n -disconnects you from your current vc channel\n\n" +
+                ".oob\n -coobnvoobrt oob toobxt toob ooboobb\n\n" +
                 "```"
             ).then(message =>
                 message.delete({ timeout: 30000 })
@@ -130,9 +144,11 @@ client.on("message", async (message) => {
         case "rename":
             //* voice channel rename
             //#region
+            if (argsString === "") return;
+
             if (message.channel.id === config.vctalk && message.member.voice.channel != undefined) {
                 if (message.member.voice.channel.parentID === config.vccategory) {
-                    message.member.voice.channel.setName(message.content.slice(pLength + 6).trim());
+                    message.member.voice.channel.setName(argsString);
                     logChannel.send(`${authr}` + " set voice channel name to: `" + message.content.slice(pLength + 6).trim() + "`");
                 }
             }
@@ -141,7 +157,7 @@ client.on("message", async (message) => {
                 //* general channel rename
                 config.renamable.forEach(function (entry) {
                     if (message.channel.id === entry) {
-                        message.channel.setName(message.content.slice(pLength + 6).trim());
+                        message.channel.setName(argsString);
                         logChannel.send(`${authr}` + " set " + message.channel.name + " name to: `" + message.content.slice(pLength + 6).trim() + "`");
                     }
                 });
@@ -154,7 +170,7 @@ client.on("message", async (message) => {
         case "jumbo":
             //* big emotes
             //#region
-            var emojiId = message.content.slice(pLength + 5).trim();
+            var emojiId = argsString;
             if (emojiExists(emojiId)) {
                 svg2img(twemojiParse(emojiId)[0].url, { width: jumboSize, height: jumboSize, preserveAspectRatio: true }, function (_, buffer) {
                     var attachment = new Discord.MessageAttachment(buffer, "unknown.png");
@@ -237,11 +253,10 @@ client.on("message", async (message) => {
         case "remind":
             //* reminder tool
             //#region
-            var arg = message.content.substr(message.content.indexOf(' ') + 1).trim();
-            var delayString = arg.substr(0, arg.indexOf(" "));
+            const [delayString, reminder = ""] = args;
+            if (!delayString) return;
             var delay = new Date(Date.now() + convertDelayStringToMS(delayString));
             if (delay) {
-                var reminder = arg.substr(delayString.length).trim();
                 var author = authr.id;
                 db.run(/*sql*/`INSERT INTO Reminders VALUES (?, ?, ?)`, [delay, author, reminder]);
                 message.channel.send("You have set a reminder for: `" + delay.toISOString().replace(/T/, " ").replace(/\..+/, "`"));
@@ -253,8 +268,8 @@ client.on("message", async (message) => {
         case "ooboobb":
             //* oob
             //#region
-            const content = message.content.split(/\s+/, 2)[1] || '';
-            return require('./extra/oob')(message.channel, content);
+            if (argsString === "") return;
+            return require('./extra/oob')(message.channel, argsString);
             break;
         //#endregion
     }
@@ -264,14 +279,13 @@ client.on("message", async (message) => {
 client.on("message", async (message) => {
     if (!message.content.startsWith(config.prefix) || message.author.bot || !(message.member.roles.cache.has(config.adminrole))) return;
 
-    const args = message.content.slice(pLength).trim().split(/ +/g);
-    const command = args.shift().toLocaleLowerCase();
+    const { command, argsString, args } = getCommandParts(message.content);
     const authr = message.author;
 
     switch (command) {
 
         case "botavatar":
-            getBufferFromUrl(message.content.slice(pLength + 9).trim(), function (_, _, body) {
+            getBufferFromUrl(argsString, function (_, _, body) {
                 client.user.setAvatar(body);
             });
 
