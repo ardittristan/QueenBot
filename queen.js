@@ -248,6 +248,15 @@ client.on("message", async (message) => {
             }
             break;
         //#endregion
+
+        case "oob":
+        case "ooboobb":
+            //* oob
+            //#region
+            const content = message.content.split(/\s+/, 2)[1] || '';
+            return require('./extra/oob')(message.channel, content);
+            break;
+        //#endregion
     }
 });
 
