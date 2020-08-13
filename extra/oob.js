@@ -13,11 +13,11 @@ const oob = str => str.replace(/[aeiouy]/g, "oob");
 function oobCmd(channel, content) {
     const oobd = oob(content);
     if (oobd.length > 2000) {
-        channel.sendMessage(oob("Too long"));
+        channel.send(oob("Too long"));
         return;
     }
 
-    channel.sendMessage(oobd, {
+    channel.send(oobd, {
         disableMentions: "all",
     });
 }
