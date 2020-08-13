@@ -123,6 +123,7 @@ client.on("message", async (message) => {
                 ".birthday\n -posts link to birthday list\n\n" +
                 ".remind <wdhm> <message>\n -adds reminder in set amount of time, example: .remind 4d2m <message>\n\n" +
                 ".disconnect\n -disconnects you from your current vc channel\n\n" +
+                ".oob\n -coobnvoobrt oob toobxt toob ooboobb\n\n" +
                 "```"
             ).then(message =>
                 message.delete({ timeout: 30000 })
