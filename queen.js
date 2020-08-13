@@ -99,8 +99,12 @@ client.on("ready", () => {
 client.on("message", async (message) => {
     if (!message.content.startsWith(config.prefix) || message.author.bot) return;
 
-    const args = message.content.slice(pLength).trim().split(/ +/g);
-    const command = args.shift().toLocaleLowerCase();
+    const commandPartsSource = message.content.slice(pLength);
+    const argsSeparatorMatch = commandPartsSource.match(/\s+/);
+    const [command, argsString] = argsSeparatorMatch
+        ? [commandPartsSource.slice(0, argsSeparatorMatch.index), commandPartsSource.slice(argsSeparatorMatch.index).trim()]
+        : [commandPartsSource, ""];
+    const args = argsString.split(/\s+/g);
     const authr = message.author;
 
     switch (command) {
@@ -253,8 +257,8 @@ client.on("message", async (message) => {
         case "ooboobb":
             //* oob
             //#region
-            const content = message.content.split(/\s+/, 2)[1] || '';
-            return require('./extra/oob')(message.channel, content);
+            if (argsString === "") return;
+            return require('./extra/oob')(message.channel, argsString);
             break;
         //#endregion
     }
