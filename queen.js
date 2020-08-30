@@ -253,7 +253,11 @@ client.on("message", async (message) => {
         case "remind":
             //* reminder tool
             //#region
-            const [delayString, reminder = ""] = args;
+            const [delayString] = args;
+            /** @type {String[]} */
+            let reminderArr = args || [""]
+            reminderArr.shift()
+            const reminder = reminderArr.join(" ")
             if (!delayString) return;
             var delay = new Date(Date.now() + convertDelayStringToMS(delayString));
             if (delay) {
